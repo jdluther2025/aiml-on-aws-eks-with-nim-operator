@@ -1,0 +1,61 @@
+# NIMCache resources — pre-download and cache model weights to EFS.
+#
+# The NIM Operator manages the download job. Weights land on EFS so that
+# NIMService pods start from cache in ~5 min instead of ~15 min.
+#
+# Models:
+#   LLM:       meta-llama-3.2-1b-instruct  — 1B params, ~2.5 GB, GPU required
+#   Embedding: nv-embedqa-e5-v5            — retrieval-tuned, CPU-capable
+#
+# Status: kubectl get nimcache -n nim-service
+# Logs:   kubectl logs -n nim-service -l nvidia.com/nim-cache-name=<name>
+
+---
+apiVersion: apps.nvidia.com/v1alpha1
+kind: NIMCache
+metadata:
+  name: meta-llama-3-2-1b-instruct
+  namespace: nim-service
+spec:
+  source:
+    ngcModel:
+      modelPuller: nvcr.io/nvidia/nim/meta/llama-3.2-1b-instruct:latest
+      pullSecret: ngc-secret
+      model:
+        engine: vllm
+        repoName: "meta/llama-3.2-1b-instruct"
+        precision: "fp16"
+        profiles: []
+  storage:
+    pvc:
+      create: true
+      storageClassName: efs-sc
+      size: "10Gi"
+      accessModes:
+        - ReadWriteMany
+      volumeAccessMode: ReadWriteMany
+
+---
+apiVersion: apps.nvidia.com/v1alpha1
+kind: NIMCache
+metadata:
+  name: nv-embedqa-e5-v5
+  namespace: nim-service
+spec:
+  source:
+    ngcModel:
+      modelPuller: nvcr.io/nvidia/nim/nvidia/nv-embedqa-e5-v5:latest
+      pullSecret: ngc-secret
+      model:
+        engine: vllm
+        repoName: "nvidia/nv-embedqa-e5-v5"
+        precision: "fp16"
+        profiles: []
+  storage:
+    pvc:
+      create: true
+      storageClassName: efs-sc
+      size: "5Gi"
+      accessModes:
+        - ReadWriteMany
+      volumeAccessMode: ReadWriteMany

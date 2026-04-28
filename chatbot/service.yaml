@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: nim-rag-chatbot
+  namespace: default
+spec:
+  selector:
+    app: nim-rag-chatbot
+  ports:
+    - port: 7860
+      targetPort: 7860
+  type: ClusterIP

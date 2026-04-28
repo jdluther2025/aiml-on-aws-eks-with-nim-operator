@@ -1,0 +1,49 @@
+# Chatbot deployment — Gradio + LangChain RAG app.
+#
+# The chatbot pod calls both NIM services over cluster-internal DNS
+# and reads/writes vectors to OpenSearch Serverless via Pod Identity.
+# No AWS credentials are mounted — Pod Identity injects temporary STS tokens.
+#
+# Build the chatbot image from the AWS sample:
+#   https://github.com/aws-samples/eks-auto-mode-nvidia-nim-rag
+#
+# AOSS_ENDPOINT and AWS_REGION are populated by deploy-chatbot.sh (envsubst).
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nim-rag-chatbot
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nim-rag-chatbot
+  template:
+    metadata:
+      labels:
+        app: nim-rag-chatbot
+    spec:
+      serviceAccountName: ${CHATBOT_SA_NAME}
+      containers:
+        - name: chatbot
+          image: ${CHATBOT_IMAGE}
+          ports:
+            - containerPort: 7860
+          env:
+            - name: LLM_ENDPOINT
+              value: "http://meta-llama-3-2-1b-instruct.nim-service.svc.cluster.local:8000/v1"
+            - name: EMBEDDING_ENDPOINT
+              value: "http://nv-embedqa-e5-v5.nim-service.svc.cluster.local:8000/v1"
+            - name: AOSS_ENDPOINT
+              value: "${AOSS_ENDPOINT}"
+            - name: AWS_DEFAULT_REGION
+              value: "${AWS_REGION}"
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "2"
+              memory: "2Gi"

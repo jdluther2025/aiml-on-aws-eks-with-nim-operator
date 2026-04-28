@@ -1,0 +1,53 @@
+# NIMService resources — launch inference pods from cached model weights.
+#
+# Each NIMService exposes an OpenAI-compatible HTTP API on port 8000.
+# The chatbot calls these via cluster-internal DNS — no external traffic.
+#
+# Internal cluster DNS:
+#   LLM:       http://meta-llama-3-2-1b-instruct.nim-service.svc.cluster.local:8000/v1
+#   Embedding: http://nv-embedqa-e5-v5.nim-service.svc.cluster.local:8000/v1
+#
+# Status: kubectl get nimservice -n nim-service
+# Logs:   kubectl logs -n nim-service deployment/<name>
+
+---
+apiVersion: apps.nvidia.com/v1alpha1
+kind: NIMService
+metadata:
+  name: meta-llama-3-2-1b-instruct
+  namespace: nim-service
+spec:
+  model:
+    nimCache:
+      name: meta-llama-3-2-1b-instruct
+      profile: ""
+    name: "meta-llama-3.2-1b-instruct"
+    engine: vllm
+  replicas: 1
+  resources:
+    limits:
+      nvidia.com/gpu: "1"
+  tolerations:
+    - key: nvidia.com/gpu
+      operator: Exists
+      effect: NoSchedule
+  imagePullSecrets:
+    - name: ngc-secret
+
+---
+apiVersion: apps.nvidia.com/v1alpha1
+kind: NIMService
+metadata:
+  name: nv-embedqa-e5-v5
+  namespace: nim-service
+spec:
+  model:
+    nimCache:
+      name: nv-embedqa-e5-v5
+      profile: ""
+    name: "nvidia/nv-embedqa-e5-v5"
+    engine: vllm
+  replicas: 1
+  resources: {}
+  imagePullSecrets:
+    - name: ngc-secret

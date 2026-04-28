@@ -1,0 +1,38 @@
+# GPU NodePool — G5 instances (A10G GPU), on-demand only.
+#
+# Karpenter (built into EKS Auto Mode) provisions nodes from this pool
+# when pods with the nvidia.com/gpu resource request are scheduled.
+#
+# Taint: nvidia.com/gpu=Exists:NoSchedule
+# NIMService pods carry a matching toleration — CPU-only pods stay off GPU nodes.
+#
+# Cost note: G5 instances are billed per second. Set consolidateAfter: 30s
+# so empty GPU nodes are terminated quickly after NIMService pods are removed.
+
+apiVersion: karpenter.sh/v1
+kind: NodePool
+metadata:
+  name: gpu-node-pool
+spec:
+  template:
+    spec:
+      nodeClassRef:
+        group: eks.amazonaws.com
+        kind: NodeClass
+        name: default
+      taints:
+        - key: nvidia.com/gpu
+          value: "Exists"
+          effect: NoSchedule
+      requirements:
+        - key: "eks.amazonaws.com/instance-family"
+          operator: In
+          values: ["g5"]
+        - key: "karpenter.sh/capacity-type"
+          operator: In
+          values: ["on-demand"]
+  limits:
+    nvidia.com/gpu: "4"
+  disruption:
+    consolidationPolicy: WhenEmpty
+    consolidateAfter: 30s

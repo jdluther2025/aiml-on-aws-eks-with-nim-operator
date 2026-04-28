@@ -1,0 +1,50 @@
+apiVersion: eksctl.io/v1alpha5
+kind: ClusterConfig
+
+metadata:
+  name: ${EKS_CLUSTER_NAME}
+  region: ${AWS_REGION}
+  version: "${K8S_VERSION}"
+
+# VPC and subnets provisioned by CDK (infra/).
+# scripts/create-cluster.sh populates these values from CDK outputs.
+vpc:
+  id: "${VPC_ID}"
+  subnets:
+    private:
+      ${AZ_1}: { id: "${PRIVATE_SUBNET_1}" }
+      ${AZ_2}: { id: "${PRIVATE_SUBNET_2}" }
+    public:
+      ${AZ_1}: { id: "${PUBLIC_SUBNET_1}" }
+      ${AZ_2}: { id: "${PUBLIC_SUBNET_2}" }
+
+# Auto Mode — AWS manages Karpenter and node lifecycle.
+# GPU nodes are provisioned on demand when NIMService pods are scheduled.
+# The GPU NodePool in nim/gpu-nodepool.yaml declares G5 (A10G) requirements.
+autoModeConfig:
+  enabled: true
+
+iam:
+  # Pod Identity — chatbot pod gets AWS credentials to call OpenSearch Serverless.
+  # eksctl creates the IAM role and the Pod Identity Association.
+  # create-cluster.sh then creates the OpenSearch data access policy
+  # using the role ARN returned from IAM (chatbot role must exist before
+  # the data access policy can reference it).
+  podIdentityAssociations:
+    - namespace: default
+      serviceAccountName: ${CHATBOT_SA_NAME}
+      createServiceAccount: true
+      roleName: ${IAM_CHATBOT_ROLE}
+      permissionPolicy:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: ["aoss:*"]
+            Resource: "*"
+
+addons:
+  # EFS CSI driver — required for NIMCache ReadWriteMany PersistentVolumes.
+  # Pod Identity gives the driver's service account the IAM permissions
+  # it needs to create EFS Access Points.
+  - name: aws-efs-csi-driver
+    useDefaultPodIdentityAssociations: true
