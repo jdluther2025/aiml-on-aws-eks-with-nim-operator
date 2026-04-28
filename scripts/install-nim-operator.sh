@@ -49,9 +49,10 @@ kubectl create namespace "${NAMESPACE_NIM}" 2>/dev/null \
     || echo "Namespace ${NAMESPACE_NIM} already exists."
 
 echo ""
-echo "── STEP 5: Create NGC registry secret ─────────────────────────────────"
-# This secret authenticates NIMCache download jobs and NIMService pods
-# when pulling container images from nvcr.io (NVIDIA Container Registry).
+echo "── STEP 5: Create NGC secrets ──────────────────────────────────────────"
+# Two secrets are required by NIMCache and NIMService:
+#   ngc-secret     — Docker registry secret for pulling NIM container images from nvcr.io
+#   ngc-api-secret — Generic secret with NGC_API_KEY for model weight download auth
 if [[ -z "${NGC_API_KEY:-}" ]]; then
     echo "NGC API key required. Get yours at: https://build.nvidia.com"
     read -r -s -p "Enter NGC API key: " NGC_API_KEY
@@ -65,6 +66,12 @@ kubectl create secret docker-registry ngc-secret \
     --docker-password="${NGC_API_KEY}" \
     2>/dev/null \
     || echo "Secret ngc-secret already exists in ${NAMESPACE_NIM}."
+
+kubectl create secret generic ngc-api-secret \
+    --namespace "${NAMESPACE_NIM}" \
+    --from-literal=NGC_API_KEY="${NGC_API_KEY}" \
+    2>/dev/null \
+    || echo "Secret ngc-api-secret already exists in ${NAMESPACE_NIM}."
 
 echo ""
 echo "── STEP 6: Verify NFD is running ───────────────────────────────────────"

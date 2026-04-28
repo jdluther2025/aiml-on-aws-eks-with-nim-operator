@@ -1,13 +1,14 @@
 # GPU NodePool — G5 instances (A10G GPU), on-demand only.
 #
-# Karpenter (built into EKS Auto Mode) provisions nodes from this pool
-# when pods with the nvidia.com/gpu resource request are scheduled.
+# Node labels (spec.template.metadata.labels) are critical:
+#   NIMCache and NIMService use nodeSelector to target these labels.
+#   Without them, NIM pods can't find GPU nodes.
 #
-# Taint: nvidia.com/gpu=Exists:NoSchedule
-# NIMService pods carry a matching toleration — CPU-only pods stay off GPU nodes.
+# Taint: nvidia.com/gpu=Exists:NoSchedule — keeps CPU-only pods off GPU nodes.
+# NIMCache and NIMService carry a matching toleration.
 #
-# Cost note: G5 instances are billed per second. Set consolidateAfter: 30s
-# so empty GPU nodes are terminated quickly after NIMService pods are removed.
+# Cost note: G5 instances are billed per second. consolidateAfter: 30s
+# terminates empty GPU nodes quickly after NIMService pods are removed.
 
 apiVersion: karpenter.sh/v1
 kind: NodePool
@@ -15,6 +16,10 @@ metadata:
   name: gpu-node-pool
 spec:
   template:
+    metadata:
+      labels:
+        type: karpenter
+        NodeGroupType: gpu-node-pool
     spec:
       nodeClassRef:
         group: eks.amazonaws.com
@@ -23,16 +28,22 @@ spec:
       taints:
         - key: nvidia.com/gpu
           value: "Exists"
-          effect: NoSchedule
+          effect: "NoSchedule"
       requirements:
         - key: "eks.amazonaws.com/instance-family"
           operator: In
           values: ["g5"]
+        - key: "eks.amazonaws.com/instance-size"
+          operator: In
+          values: ["2xlarge", "4xlarge", "8xlarge", "16xlarge", "12xlarge", "24xlarge"]
+        - key: "kubernetes.io/arch"
+          operator: In
+          values: ["amd64"]
         - key: "karpenter.sh/capacity-type"
           operator: In
           values: ["on-demand"]
   limits:
-    nvidia.com/gpu: "4"
+    cpu: "1000"
   disruption:
     consolidationPolicy: WhenEmpty
     consolidateAfter: 30s

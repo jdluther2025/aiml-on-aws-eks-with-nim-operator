@@ -1,11 +1,14 @@
 # NIMService resources — launch inference pods from cached model weights.
 #
-# Each NIMService exposes an OpenAI-compatible HTTP API on port 8000.
-# The chatbot calls these via cluster-internal DNS — no external traffic.
+# Each NIMService exposes an OpenAI-compatible HTTP API on port 8000 (ClusterIP).
+# The chatbot calls these via cluster-internal DNS — no external inference traffic.
 #
 # Internal cluster DNS:
 #   LLM:       http://meta-llama-3-2-1b-instruct.nim-service.svc.cluster.local:8000/v1
 #   Embedding: http://nv-embedqa-e5-v5.nim-service.svc.cluster.local:8000/v1
+#
+# Both services require a GPU (nodeSelector + toleration).
+# The LLM service includes HPA — scales up to 3 replicas based on request volume.
 #
 # Status: kubectl get nimservice -n nim-service
 # Logs:   kubectl logs -n nim-service deployment/<name>
@@ -17,22 +20,51 @@ metadata:
   name: meta-llama-3-2-1b-instruct
   namespace: nim-service
 spec:
-  model:
+  annotations:
+    prometheus.io/scrape: "true"
+  image:
+    repository: nvcr.io/nim/meta/llama-3.2-1b-instruct
+    tag: "1.6.0"
+    pullPolicy: IfNotPresent
+    pullSecrets:
+      - ngc-secret
+  authSecret: ngc-api-secret
+  storage:
     nimCache:
       name: meta-llama-3-2-1b-instruct
       profile: ""
-    name: "meta-llama-3.2-1b-instruct"
-    engine: vllm
   replicas: 1
   resources:
     limits:
-      nvidia.com/gpu: "1"
+      nvidia.com/gpu: 1
+  expose:
+    service:
+      type: ClusterIP
+      port: 8000
+  scale:
+    enabled: true
+    hpa:
+      maxReplicas: 3
+      minReplicas: 1
+      metrics:
+        - type: Object
+          object:
+            metric:
+              name: request_success_total
+            describedObject:
+              apiVersion: v1
+              kind: Service
+              name: meta-llama-3-2-1b-instruct
+            target:
+              type: Value
+              value: 10
+  nodeSelector:
+    NodeGroupType: gpu-node-pool
+    type: karpenter
   tolerations:
-    - key: nvidia.com/gpu
+    - effect: NoSchedule
+      key: nvidia.com/gpu
       operator: Exists
-      effect: NoSchedule
-  imagePullSecrets:
-    - name: ngc-secret
 
 ---
 apiVersion: apps.nvidia.com/v1alpha1
@@ -41,13 +73,29 @@ metadata:
   name: nv-embedqa-e5-v5
   namespace: nim-service
 spec:
-  model:
+  image:
+    repository: nvcr.io/nim/nvidia/llama-3.2-nv-embedqa-1b-v2
+    tag: "1.3.1"
+    pullPolicy: IfNotPresent
+    pullSecrets:
+      - ngc-secret
+  authSecret: ngc-api-secret
+  storage:
     nimCache:
       name: nv-embedqa-e5-v5
       profile: ""
-    name: "nvidia/nv-embedqa-e5-v5"
-    engine: vllm
   replicas: 1
-  resources: {}
-  imagePullSecrets:
-    - name: ngc-secret
+  resources:
+    limits:
+      nvidia.com/gpu: 1
+  expose:
+    service:
+      type: ClusterIP
+      port: 8000
+  nodeSelector:
+    NodeGroupType: gpu-node-pool
+    type: karpenter
+  tolerations:
+    - effect: NoSchedule
+      key: nvidia.com/gpu
+      operator: Exists

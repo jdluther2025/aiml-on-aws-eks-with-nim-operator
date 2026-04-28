@@ -1,39 +1,22 @@
 # NIMCache resources — pre-download and cache model weights to EFS.
 #
-# The NIM Operator manages the download job. Weights land on EFS so that
-# NIMService pods start from cache in ~5 min instead of ~15 min.
+# The NIM Operator launches a download job on a GPU node.
+# Weights land on EFS (ReadWriteMany) so NIMService pods start in ~5 min
+# instead of ~15 min on first run.
+#
+# Two NGC secrets are required:
+#   ngc-secret     — Docker registry secret (pulls NIM container image)
+#   ngc-api-secret — Generic secret with NGC_API_KEY (authenticates weight download)
+#
+# nodeSelector targets the GPU NodePool via the labels set in gpu-nodepool.yaml.
+# tolerations allow scheduling onto the nvidia.com/gpu tainted nodes.
 #
 # Models:
-#   LLM:       meta-llama-3.2-1b-instruct  — 1B params, ~2.5 GB, GPU required
-#   Embedding: nv-embedqa-e5-v5            — retrieval-tuned, CPU-capable
+#   LLM:       meta/llama-3.2-1b-instruct:1.6.0  — TensorRT-LLM engine, GPU
+#   Embedding: nvidia/llama-3.2-nv-embedqa-1b-v2:1.3.1 — GPU
 #
 # Status: kubectl get nimcache -n nim-service
 # Logs:   kubectl logs -n nim-service -l nvidia.com/nim-cache-name=<name>
-
----
-apiVersion: apps.nvidia.com/v1alpha1
-kind: NIMCache
-metadata:
-  name: meta-llama-3-2-1b-instruct
-  namespace: nim-service
-spec:
-  source:
-    ngcModel:
-      modelPuller: nvcr.io/nvidia/nim/meta/llama-3.2-1b-instruct:latest
-      pullSecret: ngc-secret
-      model:
-        engine: vllm
-        repoName: "meta/llama-3.2-1b-instruct"
-        precision: "fp16"
-        profiles: []
-  storage:
-    pvc:
-      create: true
-      storageClassName: efs-sc
-      size: "10Gi"
-      accessModes:
-        - ReadWriteMany
-      volumeAccessMode: ReadWriteMany
 
 ---
 apiVersion: apps.nvidia.com/v1alpha1
@@ -43,19 +26,55 @@ metadata:
   namespace: nim-service
 spec:
   source:
-    ngcModel:
-      modelPuller: nvcr.io/nvidia/nim/nvidia/nv-embedqa-e5-v5:latest
+    ngc:
+      modelPuller: nvcr.io/nim/nvidia/llama-3.2-nv-embedqa-1b-v2:1.3.1
       pullSecret: ngc-secret
+      authSecret: ngc-api-secret
       model:
-        engine: vllm
-        repoName: "nvidia/nv-embedqa-e5-v5"
-        precision: "fp16"
-        profiles: []
+        profiles:
+          - all
   storage:
     pvc:
       create: true
-      storageClassName: efs-sc
-      size: "5Gi"
-      accessModes:
-        - ReadWriteMany
+      storageClass: efs
+      size: "50Gi"
       volumeAccessMode: ReadWriteMany
+  resources: {}
+  nodeSelector:
+    NodeGroupType: gpu-node-pool
+    type: karpenter
+  tolerations:
+    - effect: NoSchedule
+      key: nvidia.com/gpu
+      operator: Exists
+
+---
+apiVersion: apps.nvidia.com/v1alpha1
+kind: NIMCache
+metadata:
+  name: meta-llama-3-2-1b-instruct
+  namespace: nim-service
+spec:
+  source:
+    ngc:
+      modelPuller: nvcr.io/nim/meta/llama-3.2-1b-instruct:1.6.0
+      pullSecret: ngc-secret
+      authSecret: ngc-api-secret
+      model:
+        engine: tensorrt_llm
+        profiles:
+          - all
+  storage:
+    pvc:
+      create: true
+      storageClass: efs
+      size: "50Gi"
+      volumeAccessMode: ReadWriteMany
+  resources: {}
+  nodeSelector:
+    NodeGroupType: gpu-node-pool
+    type: karpenter
+  tolerations:
+    - effect: NoSchedule
+      key: nvidia.com/gpu
+      operator: Exists
