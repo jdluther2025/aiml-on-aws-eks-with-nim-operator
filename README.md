@@ -109,5 +109,14 @@ Always run `./scripts/destroy-cluster.sh` when done.
 
 - [Building a RAG Chat-Based Assistant on Amazon EKS Auto Mode and NVIDIA NIMs](https://aws.amazon.com/blogs/machine-learning/building-a-rag-chat-based-assistant-on-amazon-eks-auto-mode-and-nvidia-nims/) — AWS ML Blog
 - [NVIDIA NIM for LLMs](https://docs.nvidia.com/nim/large-language-models/latest/index.html) — NIM documentation
+### GPU Inference on Amazon EKS Series
 - [NIM Operator](https://github.com/NVIDIA/k8s-nim-operator) — Kubernetes operator for NIMCache and NIMService CRDs
-- [NVIDIA NIM Operator on Amazon EKS](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/nvidia-nim-operator) — Inference on EKS from GenAI on EKS workshop series!
+- [NVIDIA NIM Operator on Amazon EKS](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/nvidia-nim-operator)
+- [RayServe with vLLM](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/vLLM-rayserve)
+- [Stable Diffusion on GPU](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/stablediffusion-gpus)
+- [NVIDIA NIM LLM on EKS](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/nvidia-nim-llama3)
+- [NVIDIA Triton Server with vLLM](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/vLLM-NVIDIATritonServer)
+- [AIBrix on EKS](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/aibrix-deepseek-distill)
+- [DeepSeek-R1 on EKS](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/ray-vllm-deepseek)
+- [NVIDIA Dynamo on Amazon EKS](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/nvidia-dynamo)
+- [NVIDIA Enterprise RAG & AI-Q Research Assistant on Amazon EKS](https://awslabs.github.io/ai-on-eks/docs/blueprints/inference/framework-guides/GPUs/nvidia-deep-research)
