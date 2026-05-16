@@ -119,7 +119,7 @@ class EksNimStack(Stack):
         network_policy = aoss.CfnSecurityPolicy(self, "AossNetworkPolicy",
             name="nim-rag-network",
             type="network",
-            policy=json.dumps({
+            policy=json.dumps([{
                 "Rules": [
                     {
                         "ResourceType": "collection",
@@ -132,7 +132,7 @@ class EksNimStack(Stack):
                 ],
                 "AllowFromPublic": False,
                 "SourceVPCEs": [aoss_vpce.ref],
-            }),
+            }]),
         )
 
         collection = aoss.CfnCollection(self, "AossCollection",
