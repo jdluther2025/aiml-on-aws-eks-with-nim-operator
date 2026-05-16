@@ -30,14 +30,18 @@ get_output() {
 }
 
 echo "── STEP 1: Delete chatbot and NIM Kubernetes resources ─────────────────"
-kubectl delete deployment nim-rag-chatbot --ignore-not-found || true
-kubectl delete service nim-rag-chatbot --ignore-not-found || true
-kubectl delete -f "${REPO_ROOT}/nim/nimservices.yaml" --ignore-not-found || true
-kubectl delete -f "${REPO_ROOT}/nim/nimcaches.yaml" --ignore-not-found || true
-kubectl delete -f "${REPO_ROOT}/nim/gpu-nodepool.yaml" --ignore-not-found || true
-kubectl delete storageclass efs-sc --ignore-not-found || true
-kubectl delete namespace nim-service --ignore-not-found || true
-echo "Kubernetes resources deleted."
+if kubectl cluster-info 2>/dev/null | grep -q "running"; then
+    kubectl delete deployment nim-rag-chatbot --ignore-not-found || true
+    kubectl delete service nim-rag-chatbot --ignore-not-found || true
+    kubectl delete -f "${REPO_ROOT}/nim/nimservices.yaml" --ignore-not-found || true
+    kubectl delete -f "${REPO_ROOT}/nim/nimcaches.yaml" --ignore-not-found || true
+    kubectl delete -f "${REPO_ROOT}/nim/gpu-nodepool.yaml" --ignore-not-found || true
+    kubectl delete storageclass efs-sc --ignore-not-found || true
+    kubectl delete namespace nim-service --ignore-not-found || true
+    echo "Kubernetes resources deleted."
+else
+    echo "Cluster not reachable — skipping Kubernetes resource deletion."
+fi
 
 echo ""
 echo "── STEP 2: Delete OpenSearch data access policy ─────────────────────────"
@@ -50,7 +54,11 @@ aws opensearchserverless delete-access-policy \
 
 echo ""
 echo "── STEP 3: Delete EKS cluster with eksctl ──────────────────────────────"
-eksctl delete cluster --name "${CLUSTER_NAME}" --region "${REGION}" --wait
+if aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${REGION}" 2>&1 | grep -q "ResourceNotFoundException"; then
+    echo "EKS cluster not found — skipping."
+else
+    eksctl delete cluster --name "${CLUSTER_NAME}" --region "${REGION}" --wait
+fi
 
 echo ""
 echo "── STEP 4: Delete EFS mount targets ─────────────────────────────────────"
