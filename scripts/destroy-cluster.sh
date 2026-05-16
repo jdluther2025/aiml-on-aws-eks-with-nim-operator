@@ -54,10 +54,12 @@ aws opensearchserverless delete-access-policy \
 
 echo ""
 echo "── STEP 3: Delete EKS cluster with eksctl ──────────────────────────────"
-if aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${REGION}" --output text > /dev/null 2>&1; then
-    eksctl delete cluster --name "${CLUSTER_NAME}" --region "${REGION}" --wait
-else
+CLUSTER_STATUS=$(aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${REGION}" \
+    --query 'cluster.status' --output text 2>/dev/null || echo "NOT_FOUND")
+if [[ "${CLUSTER_STATUS}" == "NOT_FOUND" ]]; then
     echo "EKS cluster not found — skipping."
+else
+    eksctl delete cluster --name "${CLUSTER_NAME}" --region "${REGION}" --wait
 fi
 
 echo ""
