@@ -87,4 +87,6 @@ kubectl get crd | grep nvidia
 
 echo ""
 echo "NIM Operator is ready. CRDs: NIMCache, NIMService, NIMPipeline."
-echo "Next: ./scripts/deploy-nim.sh"
+echo "Next:"
+echo "  ./scripts/build-chatbot.sh   # build and push chatbot image to ECR"
+echo "  ./scripts/deploy-nim.sh      # deploy NIMCache + NIMService (run in parallel with build-chatbot.sh)"

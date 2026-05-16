@@ -59,8 +59,7 @@ spec:
               type: Value
               value: 10
   nodeSelector:
-    NodeGroupType: gpu-node-pool
-    type: karpenter
+    karpenter.sh/nodepool: gpu-node-pool
   tolerations:
     - effect: NoSchedule
       key: nvidia.com/gpu
@@ -93,8 +92,7 @@ spec:
       type: ClusterIP
       port: 8000
   nodeSelector:
-    NodeGroupType: gpu-node-pool
-    type: karpenter
+    karpenter.sh/nodepool: gpu-node-pool
   tolerations:
     - effect: NoSchedule
       key: nvidia.com/gpu

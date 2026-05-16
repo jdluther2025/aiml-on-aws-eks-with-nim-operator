@@ -41,8 +41,7 @@ spec:
       volumeAccessMode: ReadWriteMany
   resources: {}
   nodeSelector:
-    NodeGroupType: gpu-node-pool
-    type: karpenter
+    karpenter.sh/nodepool: gpu-node-pool
   tolerations:
     - effect: NoSchedule
       key: nvidia.com/gpu
@@ -72,8 +71,7 @@ spec:
       volumeAccessMode: ReadWriteMany
   resources: {}
   nodeSelector:
-    NodeGroupType: gpu-node-pool
-    type: karpenter
+    karpenter.sh/nodepool: gpu-node-pool
   tolerations:
     - effect: NoSchedule
       key: nvidia.com/gpu
