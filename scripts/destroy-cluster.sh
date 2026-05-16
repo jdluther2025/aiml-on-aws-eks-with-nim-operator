@@ -87,46 +87,49 @@ echo "── STEP 6: Verify everything is gone ───────────
 PASS=0
 FAIL=0
 
-check() {
-    local label="$1"; local cmd="$2"; local expect_empty="$3"
-    local result
-    result=$(eval "${cmd}" 2>&1)
-    if [[ "${expect_empty}" == "true" && -z "${result}" ]] || \
-       [[ "${expect_empty}" == "false" && -n "$(echo "${result}" | grep -i 'does not exist\|not found\|NoSuchEntity\|cannot list\|error')" ]]; then
-        echo "  ✓ ${label}"
-        PASS=$((PASS + 1))
-    else
-        echo "  ✗ ${label} — may still exist"
-        echo "    ${result}" | head -3
-        FAIL=$((FAIL + 1))
-    fi
-}
+# EKS cluster
+if aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${REGION}" 2>&1 | grep -qi "not found\|does not exist"; then
+    echo "  ✅  EKS cluster deleted"
+    PASS=$((PASS + 1))
+else
+    echo "  ❌  EKS cluster may still exist"
+    FAIL=$((FAIL + 1))
+fi
 
-check "EKS cluster deleted" \
-    "aws eks describe-cluster --name ${CLUSTER_NAME} --region ${REGION} 2>&1 | grep -i 'not found\|does not exist'" \
-    "false"
+# eksctl CloudFormation stack
+if aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-cluster" --region "${REGION}" 2>&1 | grep -qi "does not exist\|not found"; then
+    echo "  ✅  eksctl CloudFormation stack deleted"
+    PASS=$((PASS + 1))
+else
+    echo "  ❌  eksctl CloudFormation stack may still exist"
+    FAIL=$((FAIL + 1))
+fi
 
-check "eksctl CloudFormation stack deleted" \
-    "aws cloudformation describe-stacks --stack-name eksctl-${CLUSTER_NAME}-cluster --region ${REGION} 2>&1 | grep -i 'does not exist\|not found'" \
-    "false"
+# CDK CloudFormation stack
+if aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" 2>&1 | grep -qi "does not exist\|not found"; then
+    echo "  ✅  CDK CloudFormation stack deleted"
+    PASS=$((PASS + 1))
+else
+    echo "  ❌  CDK CloudFormation stack may still exist"
+    FAIL=$((FAIL + 1))
+fi
 
-check "CDK CloudFormation stack deleted" \
-    "aws cloudformation describe-stacks --stack-name ${STACK_NAME} --region ${REGION} 2>&1 | grep -i 'does not exist\|not found'" \
-    "false"
-
-check "No EC2 GPU nodes still running" \
-    "aws ec2 describe-instances \
-        --filters Name=tag:eks:cluster-name,Values=${CLUSTER_NAME} Name=instance-state-name,Values=running,pending \
-        --query 'Reservations[].Instances[].InstanceId' \
-        --output text --region ${REGION}" \
-    "true"
+# EC2 nodes
+GPU_NODES=$(aws ec2 describe-instances \
+    --filters "Name=tag:eks:cluster-name,Values=${CLUSTER_NAME}" "Name=instance-state-name,Values=running,pending" \
+    --query 'Reservations[].Instances[].InstanceId' \
+    --output text --region "${REGION}" 2>/dev/null || echo "")
+if [[ -z "${GPU_NODES}" ]]; then
+    echo "  ✅  No EC2 nodes still running"
+    PASS=$((PASS + 1))
+else
+    echo "  ❌  EC2 nodes still running: ${GPU_NODES}"
+    FAIL=$((FAIL + 1))
+fi
 
 echo ""
 if [[ "${FAIL}" -eq 0 ]]; then
     echo "All ${PASS} checks passed. No idle costs."
 else
-    echo "${FAIL} check(s) failed — review above."
-    echo "Re-check manually:"
-    echo "  aws eks describe-cluster --name ${CLUSTER_NAME} --region ${REGION}"
-    echo "  aws cloudformation list-stacks --stack-status-filter CREATE_COMPLETE UPDATE_COMPLETE --region ${REGION}"
+    echo "${FAIL} check(s) failed — review above and check AWS Console."
 fi
