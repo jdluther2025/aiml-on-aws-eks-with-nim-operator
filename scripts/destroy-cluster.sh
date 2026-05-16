@@ -98,29 +98,35 @@ PASS=0
 FAIL=0
 
 # EKS cluster
-if aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${REGION}" 2>&1 | grep -qi "not found\|does not exist"; then
+CLUSTER_STATUS=$(aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${REGION}" \
+    --query 'cluster.status' --output text 2>/dev/null || echo "NOT_FOUND")
+if [[ "${CLUSTER_STATUS}" == "NOT_FOUND" ]]; then
     echo "  ✅  EKS cluster deleted"
     PASS=$((PASS + 1))
 else
-    echo "  ❌  EKS cluster may still exist"
+    echo "  ❌  EKS cluster still exists (status: ${CLUSTER_STATUS})"
     FAIL=$((FAIL + 1))
 fi
 
 # eksctl CloudFormation stack
-if aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-cluster" --region "${REGION}" 2>&1 | grep -qi "does not exist\|not found"; then
+EKSCTL_STACK=$(aws cloudformation describe-stacks --stack-name "eksctl-${CLUSTER_NAME}-cluster" \
+    --region "${REGION}" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "NOT_FOUND")
+if [[ "${EKSCTL_STACK}" == "NOT_FOUND" ]]; then
     echo "  ✅  eksctl CloudFormation stack deleted"
     PASS=$((PASS + 1))
 else
-    echo "  ❌  eksctl CloudFormation stack may still exist"
+    echo "  ❌  eksctl CloudFormation stack still exists (status: ${EKSCTL_STACK})"
     FAIL=$((FAIL + 1))
 fi
 
 # CDK CloudFormation stack
-if aws cloudformation describe-stacks --stack-name "${STACK_NAME}" --region "${REGION}" 2>&1 | grep -qi "does not exist\|not found"; then
+CDK_STACK=$(aws cloudformation describe-stacks --stack-name "${STACK_NAME}" \
+    --region "${REGION}" --query 'Stacks[0].StackStatus' --output text 2>/dev/null || echo "NOT_FOUND")
+if [[ "${CDK_STACK}" == "NOT_FOUND" ]]; then
     echo "  ✅  CDK CloudFormation stack deleted"
     PASS=$((PASS + 1))
 else
-    echo "  ❌  CDK CloudFormation stack may still exist"
+    echo "  ❌  CDK CloudFormation stack still exists (status: ${CDK_STACK})"
     FAIL=$((FAIL + 1))
 fi
 
