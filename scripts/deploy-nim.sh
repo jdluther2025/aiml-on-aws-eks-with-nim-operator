@@ -57,12 +57,23 @@ echo ""
 
 wait_for_nimcache() {
     local name="$1"
+    local timeout=1200
+    local elapsed=0
     echo "  Waiting for NIMCache/${name}..."
-    kubectl wait nimcache "${name}" \
-        --namespace "${NAMESPACE}" \
-        --for=condition=Ready \
-        --timeout=1200s
-    echo "  NIMCache/${name} is ready."
+    while true; do
+        STATE=$(kubectl get nimcache "${name}" -n "${NAMESPACE}" \
+            -o jsonpath='{.status.state}' 2>/dev/null || echo "")
+        if [[ "${STATE}" == "Ready" ]]; then
+            echo "  NIMCache/${name} is ready."
+            return 0
+        fi
+        if [[ ${elapsed} -ge ${timeout} ]]; then
+            echo "  Timed out waiting for NIMCache/${name} (state: ${STATE})"
+            return 1
+        fi
+        sleep 15
+        elapsed=$((elapsed + 15))
+    done
 }
 
 wait_for_nimcache "meta-llama-3-2-1b-instruct"
