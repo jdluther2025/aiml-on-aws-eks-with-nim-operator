@@ -1,5 +1,11 @@
 # EKS Auto Mode + NVIDIA NIM Operator + RAG
 
+**AI-ML on AWS Tutorial #6 — Building a RAG Chat Assistant w/ NVIDIA NIMs on Amazon EKS Auto Mode**
+Hands-on: GPU-accelerated LLM serving on EKS Karpenter NodePool — NIM Operator, OpenSearch vector search, and EFS model weight caching.
+→ [Read on Medium](https://medium.com/ai-ml-human-training-coaching/ai-ml-on-aws-tutorial-6-building-a-rag-chat-assistant-w-nvidia-nims-on-amazon-eks-auto-mode-3e9521d669de)
+
+---
+
 Infrastructure-as-Code for deploying NVIDIA NIMs on Amazon EKS Auto Mode and building a RAG pipeline on top. Companion code for the AI-ML on AWS blog series.
 
 ## What This Builds
@@ -104,12 +110,6 @@ Deletes K8s resources, OpenSearch data access policy, EKS cluster, EFS mount tar
 - **EKS Auto Mode**: control plane + managed nodes. No idle GPU cost when NIMService pods are not scheduled.
 
 Always run `./scripts/destroy-cluster.sh` when done.
-
-## Blog
-
-**AI-ML on AWS Tutorial #6 — Building a RAG Chat Assistant w/ NVIDIA NIMs on Amazon EKS Auto Mode**
-Hands-on: GPU-accelerated LLM serving on EKS Karpenter NodePool — NIM Operator, OpenSearch vector search, and EFS model weight caching.
-→ [Read on Medium](https://medium.com/ai-ml-human-training-coaching/ai-ml-on-aws-tutorial-6-building-a-rag-chat-assistant-w-nvidia-nims-on-amazon-eks-auto-mode-3e9521d669de)
 
 ## Reference
 
