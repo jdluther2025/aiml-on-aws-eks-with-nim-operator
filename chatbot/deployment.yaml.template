@@ -29,6 +29,7 @@ spec:
       containers:
         - name: chatbot
           image: ${CHATBOT_IMAGE}
+          command: ["python", "rag_chatbot_app.py"]
           ports:
             - containerPort: 7860
           env:

@@ -43,7 +43,23 @@ kubectl apply -f "${REPO_ROOT}/chatbot/service.yaml"
 
 echo ""
 echo "── STEP 2: Wait for chatbot to be ready ────────────────────────────────"
-kubectl rollout status deployment/nim-rag-chatbot --timeout=120s
+echo "  Waiting for chatbot pod to start..."
+ELAPSED=0
+TIMEOUT=300
+while true; do
+    STATUS=$(kubectl get deployment nim-rag-chatbot \
+        -o jsonpath='{.status.readyReplicas}' 2>/dev/null || echo "0")
+    if [[ "${STATUS}" == "1" ]]; then
+        echo "  Chatbot is ready."
+        break
+    fi
+    if [[ ${ELAPSED} -ge ${TIMEOUT} ]]; then
+        echo "  Timed out waiting for chatbot (check: kubectl logs -l app=nim-rag-chatbot)"
+        exit 1
+    fi
+    sleep 10
+    ELAPSED=$((ELAPSED + 10))
+done
 
 echo ""
 echo "── STEP 3: Port-forward for local access ───────────────────────────────"
