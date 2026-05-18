@@ -105,10 +105,10 @@ echo "── STEP 8: Smoke test — Embedding endpoint ────────�
 kubectl run nim-embed-test --rm -it --restart=Never \
     --image=curlimages/curl:8.9.0 \
     --namespace default \
-    -- sh -c 'curl -sf \
+    -- curl -s \
        -H "Content-Type: application/json" \
-       -d "{\"input\":\"test sentence for embedding\",\"model\":\"NV-EmbedQA-E5-v5\",\"input_type\":\"query\"}" \
-       http://nv-embedqa-e5-v5.nim-service.svc.cluster.local:8000/v1/embeddings'
+       -d '{"input":"test sentence for embedding","model":"nvidia/llama-3.2-nv-embedqa-1b-v2","input_type":"query"}' \
+       http://nv-embedqa-e5-v5.nim-service.svc.cluster.local:8000/v1/embeddings
 
 echo ""
 echo "Both NIMs are deployed and responding."
