@@ -50,10 +50,10 @@ else
 fi
 
 
-# Pin gradio>=5.0 — upstream requirements.txt has no version pin and installs
-# an older version that doesn't support the type="messages" arg in ChatInterface.
-sed -i '' 's/^gradio$/gradio>=5.0/' "${BUILD_DIR}/client/requirements.txt"
-echo "Pinned gradio>=5.0 in requirements.txt"
+# Gradio 5.0+ made messages the default format and removed the type= parameter.
+# Remove type="messages" from ChatInterface — it's invalid in Gradio 5+/6+.
+sed -i '' '/type="messages"/d' "${BUILD_DIR}/client/rag_chatbot_app.py"
+echo "Patched rag_chatbot_app.py: removed type=\"messages\" (invalid in Gradio 5+)"
 
 echo ""
 echo "── STEP 3: Build Docker image ──────────────────────────────────────────"
