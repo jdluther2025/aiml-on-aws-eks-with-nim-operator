@@ -8,7 +8,8 @@
 #   3. EKS cluster (eksctl — also deletes chatbot IAM role)
 #   4. EFS mount targets (CDK-managed but may need manual cleanup before CDK destroy)
 #   5. CDK stack (VPC, EFS, OpenSearch collection + policies + VPC endpoint)
-#   6. Verify nothing is left running
+#   6. ECR repository + images (nim-rag-chatbot) — prompted, default: keep
+#   7. Verify nothing is left running
 
 set -euo pipefail
 
@@ -93,7 +94,34 @@ cdk destroy --force
 deactivate
 
 echo ""
-echo "── STEP 6: Verify everything is gone ───────────────────────────────────"
+echo "── STEP 6: Delete ECR repository ───────────────────────────────────────"
+# ECR costs ~$0.10-0.20/month. Keeping the image lets the next run skip the
+# Docker build entirely (same digest is reused). Default: keep.
+ECR_REPO_NAME="${ECR_REPO_NAME:-nim-rag-chatbot}"
+ECR_EXISTS=$(aws ecr describe-repositories \
+    --repository-names "${ECR_REPO_NAME}" \
+    --region "${REGION}" \
+    --query 'repositories[0].repositoryName' \
+    --output text 2>/dev/null || echo "NOT_FOUND")
+if [[ "${ECR_EXISTS}" == "NOT_FOUND" ]]; then
+    echo "ECR repository '${ECR_REPO_NAME}' not found — skipping."
+else
+    echo "ECR repository '${ECR_REPO_NAME}' exists."
+    echo "Cost to keep: ~\$0.10–0.20/month. Keeping it lets the next run skip the Docker build."
+    read -r -p "Delete ECR repository and all images? (y/N): " delete_ecr
+    if [[ "${delete_ecr}" == "y" || "${delete_ecr}" == "Y" ]]; then
+        aws ecr delete-repository \
+            --repository-name "${ECR_REPO_NAME}" \
+            --region "${REGION}" \
+            --force
+        echo "ECR repository deleted."
+    else
+        echo "ECR repository kept."
+    fi
+fi
+
+echo ""
+echo "── STEP 7: Verify everything is gone ───────────────────────────────────"
 PASS=0
 FAIL=0
 
