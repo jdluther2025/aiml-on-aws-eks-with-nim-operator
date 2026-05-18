@@ -26,7 +26,8 @@ get_output() {
         --output text
 }
 
-export AOSS_ENDPOINT=$(get_output "AossCollectionEndpoint")
+export OPENSEARCH_COLLECTION_ID=$(get_output "AossCollectionId")
+export OPENSEARCH_INDEX="${OPENSEARCH_INDEX:-nim-rag-index}"
 export AWS_REGION="${REGION}"
 export CHATBOT_SA_NAME="${CHATBOT_SA_NAME:-nim-chatbot}"
 

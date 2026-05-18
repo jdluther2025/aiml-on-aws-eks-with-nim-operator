@@ -33,12 +33,14 @@ spec:
           ports:
             - containerPort: 7860
           env:
-            - name: LLM_ENDPOINT
+            - name: LLM_URL
               value: "http://meta-llama-3-2-1b-instruct.nim-service.svc.cluster.local:8000/v1"
-            - name: EMBEDDING_ENDPOINT
+            - name: EMBEDDINGS_URL
               value: "http://nv-embedqa-e5-v5.nim-service.svc.cluster.local:8000/v1"
-            - name: AOSS_ENDPOINT
-              value: "${AOSS_ENDPOINT}"
+            - name: OPENSEARCH_COLLECTION_ID
+              value: "${OPENSEARCH_COLLECTION_ID}"
+            - name: OPENSEARCH_INDEX
+              value: "${OPENSEARCH_INDEX}"
             - name: AWS_DEFAULT_REGION
               value: "${AWS_REGION}"
           resources:
