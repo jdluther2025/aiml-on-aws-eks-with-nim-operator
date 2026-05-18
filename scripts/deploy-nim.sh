@@ -95,10 +95,10 @@ echo "── STEP 7: Smoke test — LLM endpoint ──────────�
 kubectl run nim-test --rm -it --restart=Never \
     --image=curlimages/curl:8.9.0 \
     --namespace default \
-    -- sh -c 'curl -sf \
+    -- curl -s \
        -H "Content-Type: application/json" \
-       -d "{\"model\":\"meta-llama-3.2-1b-instruct\",\"messages\":[{\"role\":\"user\",\"content\":\"Hello from NIM\"}],\"max_tokens\":20}" \
-       http://meta-llama-3-2-1b-instruct.nim-service.svc.cluster.local:8000/v1/chat/completions'
+       -d '{"model":"meta/llama-3.2-1b-instruct","messages":[{"role":"user","content":"Hello from NIM"}],"max_tokens":20}' \
+       http://meta-llama-3-2-1b-instruct.nim-service.svc.cluster.local:8000/v1/chat/completions
 
 echo ""
 echo "── STEP 8: Smoke test — Embedding endpoint ─────────────────────────────"
