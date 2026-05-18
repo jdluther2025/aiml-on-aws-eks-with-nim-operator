@@ -105,6 +105,12 @@ Deletes K8s resources, OpenSearch data access policy, EKS cluster, EFS mount tar
 
 Always run `./scripts/destroy-cluster.sh` when done.
 
+## Blog
+
+**AI-ML on AWS Tutorial #6 — Building a RAG Chat Assistant w/ NVIDIA NIMs on Amazon EKS Auto Mode**
+Hands-on: GPU-accelerated LLM serving on EKS Karpenter NodePool — NIM Operator, OpenSearch vector search, and EFS model weight caching.
+→ [Read on Medium](https://medium.com/ai-ml-human-training-coaching/ai-ml-on-aws-tutorial-6-building-a-rag-chat-assistant-w-nvidia-nims-on-amazon-eks-auto-mode-3e9521d669de)
+
 ## Reference
 
 - [Building a RAG Chat-Based Assistant on Amazon EKS Auto Mode and NVIDIA NIMs](https://aws.amazon.com/blogs/machine-learning/building-a-rag-chat-based-assistant-on-amazon-eks-auto-mode-and-nvidia-nims/) — AWS ML Blog
