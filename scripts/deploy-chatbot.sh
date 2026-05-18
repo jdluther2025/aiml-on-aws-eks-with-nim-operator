@@ -64,6 +64,8 @@ done
 
 echo ""
 echo "── STEP 3: Port-forward for local access ───────────────────────────────"
+echo "  Waiting 15s for Gradio to finish binding to port 7860..."
+sleep 15
 echo "  Chatbot UI available at: http://localhost:7860"
 echo "  Upload a PDF, ask questions, get RAG-grounded answers."
 echo "  Press Ctrl+C to stop."
